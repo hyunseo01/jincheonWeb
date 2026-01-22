@@ -21,7 +21,7 @@ export default function LoginPage() {
       <div className="w-full max-w-sm rounded-xl border border-gray-200 bg-white p-8 shadow-lg">
         <div className="mb-8 text-center">
           <h1 className="text-2xl font-bold text-[#37352f]">📦 LOGISTICS</h1>
-          <p className="mt-2 text-sm text-gray-500">통합 물류 관리 시스템</p>
+          <p className="mt-2 text-sm text-gray-500">진천냉장센터</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">

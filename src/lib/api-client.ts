@@ -10,13 +10,16 @@ export async function client<T>(
 ): Promise<T> {
   const url = `${BASE_URL}${path}`;
 
+  // [디버깅용 로그 추가] 배포 후 브라우저 콘솔(F12)에 이 로그가 떠야 성공입니다.
+  console.log(`📡 API 요청: ${path}, credentials 설정 확인: include`);
+
   const config: RequestInit = {
     ...options,
     headers: {
       'Content-Type': 'application/json',
       ...options.headers,
     },
-    // [핵심] 쿠키(세션)를 주고받기 위해 필수
+    // [중요] 여기가 핵심입니다.
     credentials: 'include',
   };
 
