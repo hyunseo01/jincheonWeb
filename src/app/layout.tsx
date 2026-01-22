@@ -7,8 +7,8 @@ import { AuthProvider } from '@/context/AuthContext';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: '물류 통합 시스템',
-  description: 'Logistics Management System',
+  title: '진천냉장센터',
+  description: 'www.jincheoncenter.com',
 };
 
 export default function RootLayout({

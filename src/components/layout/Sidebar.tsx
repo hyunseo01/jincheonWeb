@@ -31,8 +31,7 @@ export default function Sidebar() {
 
   if (!user) return null;
 
-  // [수정] 권한 체크 로직 (대소문자 무시 등 안전장치 추가)
-  // role이 undefined일 수도 있으므로 방어코드 추가
+  // [수정] 권한 체크 로직
   const userRole = user.role ? user.role.toLowerCase() : '';
   const isAdminOrDev = userRole === 'admin' || userRole === 'developer';
   const isManagerOrAbove = isAdminOrDev || userRole === 'manager';
@@ -58,6 +57,12 @@ export default function Sidebar() {
       : []),
   ];
 
+  // [추가] 클릭 시 '미구현' 알림 처리 함수
+  const handleDisabledClick = (e) => {
+    e.preventDefault(); // 기본 링크 이동 방지
+    alert('현재 준비 중인 기능입니다.');
+  };
+
   return (
     <nav className="flex h-screen w-[260px] flex-shrink-0 flex-col bg-[#202020] transition-all">
       {/* [Logo] */}
@@ -78,16 +83,35 @@ export default function Sidebar() {
       {/* [Menu Area] */}
       <div className="flex-1 overflow-y-auto py-4">
         <ul className="flex flex-col gap-1">
-          {generalMenus.map((menu) => (
-            <li key={menu.href}>
-              <SidebarItem
-                label={menu.label}
-                href={menu.href}
-                icon={menu.icon}
-                isActive={pathname === menu.href}
-              />
-            </li>
-          ))}
+          {generalMenus.map((menu) => {
+            // [수정] 허용된 메뉴인지 확인 (이슈, 데일리체크만 true)
+            const isAllowed =
+              menu.href === '/issues' || menu.href === '/daily-check';
+
+            return (
+              <li key={menu.href}>
+                {isAllowed ? (
+                  // 허용된 메뉴: 정상적으로 렌더링
+                  <SidebarItem
+                    label={menu.label}
+                    href={menu.href}
+                    icon={menu.icon}
+                    isActive={pathname === menu.href}
+                  />
+                ) : (
+                  // 비허용 메뉴: href를 '#'으로 바꾸고 클릭 이벤트 가로채기
+                  <div onClick={handleDisabledClick}>
+                    <SidebarItem
+                      label={menu.label}
+                      href="#"
+                      icon={menu.icon}
+                      isActive={false} // 항상 비활성화 상태로 표시
+                    />
+                  </div>
+                )}
+              </li>
+            );
+          })}
         </ul>
 
         {/* 메뉴가 있을 때만 렌더링 */}
