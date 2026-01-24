@@ -10,33 +10,27 @@ export async function client<T>(
 ): Promise<T> {
   const url = `${BASE_URL}${path}`;
 
-  // [디버깅용 로그 추가] 배포 후 브라우저 콘솔(F12)에 이 로그가 떠야 성공입니다.
-  console.log(`📡 API 요청: ${path}, credentials 설정 확인: include`);
+  const token =
+    typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
 
-  const config: RequestInit = {
+  const response = await fetch(url, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...options.headers,
     },
-    // [중요] 여기가 핵심입니다.
-    credentials: 'include',
-  };
+  });
 
-  try {
-    const response = await fetch(url, config);
+  const data = await response.json().catch(() => null);
 
-    // 응답 파싱
-    const data = await response.json();
-
-    if (!response.ok) {
-      // 백엔드에서 내려준 에러 메시지가 있으면 그걸 던짐
-      throw new Error(data.message || 'API Error');
+  if (!response.ok) {
+    // 토큰이 만료/무효면 저장소에서 제거
+    if (response.status === 401 && typeof window !== 'undefined') {
+      localStorage.removeItem('accessToken');
     }
-
-    return data as T;
-  } catch (error: any) {
-    console.error(`API Error [${path}]:`, error);
-    throw error;
+    throw new Error((data && data.message) || 'API Error');
   }
+
+  return data as T;
 }

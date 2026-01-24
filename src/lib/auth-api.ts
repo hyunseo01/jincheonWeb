@@ -1,11 +1,42 @@
 import { client } from './api-client';
 import { Group, Team, User } from '@/types/auth';
 
-// 공통 응답 구조
+// 공통 응답 구조 (TransformInterceptor 기준)
 interface ApiResponse<T> {
   success: boolean;
   data: T;
   timestamp?: string;
+}
+
+// 로그인 응답 (백엔드 /auth/login 리턴값)
+type LoginResponse = {
+  accessToken: string;
+  user: User;
+};
+
+// 토큰 저장 키 (원하면 이름 바꿔도 됨)
+const ACCESS_TOKEN_KEY = 'accessToken';
+
+// 토큰 저장/삭제 유틸
+function setAccessToken(token: string) {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem(ACCESS_TOKEN_KEY, token);
+}
+
+function clearAccessToken() {
+  if (typeof window === 'undefined') return;
+  localStorage.removeItem(ACCESS_TOKEN_KEY);
+}
+
+// user 데이터 UI 호환 가공
+function normalizeUser(u: User): User {
+  return {
+    ...u,
+    teamId: u.team?.id,
+    teamName: u.team?.name,
+    groupId: u.team?.group?.id,
+    groupName: u.team?.group?.name,
+  };
 }
 
 // --- [Auth & User Create/Update API] ---
@@ -57,45 +88,45 @@ export async function updateProfile(data: Partial<User>): Promise<User> {
       officePhone: data.officePhone || undefined,
     }),
   });
-  return res.data;
+
+  return normalizeUser(res.data);
 }
 
 // 4. 로그인 (POST /auth/login)
+// - 서버는 { accessToken, user }를 리턴
+// - 토큰은 localStorage에 저장
 export async function loginApi(email: string, pw: string): Promise<User> {
-  const res = await client<ApiResponse<User>>('/auth/login', {
+  const res = await client<ApiResponse<LoginResponse>>('/auth/login', {
     method: 'POST',
     body: JSON.stringify({ email, password: pw }),
   });
 
-  const u = res.data;
-  if (!u) throw new Error('사용자 정보가 없습니다.');
+  const payload = res.data;
+  if (!payload?.accessToken || !payload?.user) {
+    throw new Error('로그인 응답이 올바르지 않습니다.');
+  }
 
-  return {
-    ...u,
-    teamId: u.team?.id,
-    teamName: u.team?.name,
-    groupId: u.team?.group?.id,
-    groupName: u.team?.group?.name,
-  };
+  setAccessToken(payload.accessToken);
+  return normalizeUser(payload.user);
 }
 
 // 5. 로그아웃 (POST /auth/logout)
+// - 서버에 호출은 선택이지만(지금은 사실상 의미 거의 없음) 유지
+// - 중요한 건 토큰 삭제
 export async function logoutApi(): Promise<void> {
-  await client('/auth/logout', { method: 'POST' });
+  try {
+    await client('/auth/logout', { method: 'POST' });
+  } finally {
+    clearAccessToken();
+  }
 }
 
 // 6. 내 정보 조회 (GET /auth/me)
+// - 토큰 없거나 만료면 null
 export async function getMe(): Promise<User | null> {
   try {
     const res = await client<ApiResponse<User>>('/auth/me');
-    const u = res.data;
-    return {
-      ...u,
-      teamId: u.team?.id,
-      teamName: u.team?.name,
-      groupId: u.team?.group?.id,
-      groupName: u.team?.group?.name,
-    };
+    return normalizeUser(res.data);
   } catch (e) {
     return null;
   }
@@ -131,6 +162,7 @@ export async function deleteGroup(id: string): Promise<void> {
 export async function getAllTeams(): Promise<Team[]> {
   const res = await client<ApiResponse<Team[]>>('/teams');
   const teams = res.data;
+
   return teams.map((t) => ({
     ...t,
     groupId: t.group?.id || '',
