@@ -1,5 +1,3 @@
-// src/types/daily.ts
-
 export interface DailyRow {
   id: string;
   // Text Slots

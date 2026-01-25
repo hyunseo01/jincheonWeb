@@ -38,13 +38,13 @@ export default function Sidebar() {
 
   // 1. 일반 업무 메뉴
   const generalMenus = [
-    { label: '데일리 업무', href: '/daily-work', icon: FaTable },
+    { label: '데일리 업무(예정)', href: '/daily-work', icon: FaTable },
     { label: '이슈 / 인수인계', href: '/issues', icon: FaExclamationCircle },
     { label: '데일리 체크', href: '/daily-check', icon: FaCheckSquare },
-    { label: '연락처 리스트', href: '/contacts', icon: FaAddressBook },
-    { label: '업무 가이드', href: '/guide', icon: FaBook },
-    { label: '유틸리티', href: '/utility', icon: FaTools },
-    { label: '업무 양식', href: '/forms', icon: FaFileAlt },
+    { label: '연락처 리스트(예정)', href: '/contacts', icon: FaAddressBook },
+    { label: '업무 가이드(예정)', href: '/guide', icon: FaBook },
+    { label: '유틸리티(예정)', href: '/utility', icon: FaTools },
+    { label: '업무 양식(구현중)', href: '/forms', icon: FaFileAlt },
   ];
 
   // 2. 관리자 전용 메뉴
@@ -75,7 +75,7 @@ export default function Sidebar() {
             ❄️ JINCHEON
           </h1>
           <p className="mt-1 pl-2 text-[11px] tracking-wide text-gray-500">
-            Cold Storage Center v1.2.1
+            Cold Storage Center v1.3.1
           </p>
         </Link>
       </div>
@@ -86,7 +86,9 @@ export default function Sidebar() {
           {generalMenus.map((menu) => {
             // [수정] 허용된 메뉴인지 확인 (이슈, 데일리체크만 true)
             const isAllowed =
-              menu.href === '/issues' || menu.href === '/daily-check';
+              menu.href === '/issues' ||
+              menu.href === '/daily-check' ||
+              menu.href === '/forms';
 
             return (
               <li key={menu.href}>

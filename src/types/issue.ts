@@ -22,6 +22,7 @@ export interface IssueDTO {
   title: string;
   preview: string;
   author: string;
+  authorId?: string;
   createdAt: string; // 생성일 ("1시간 전")
   timestamp: number; // [NEW] 정렬을 위한 실제 타임스탬프 (ms)
 

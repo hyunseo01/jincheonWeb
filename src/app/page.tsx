@@ -3,7 +3,7 @@ export default function Home() {
     <div className="flex h-full flex-col items-center justify-center p-8 text-center">
       {/* 대형 로고/텍스트 */}
       <h1 className="text-5xl font-extrabold tracking-tight text-[#37352f] md:text-7xl">
-        ❄️ 진천냉장센터 v1.2.1
+        ❄️ 진천냉장센터 v1.3.1
       </h1>
 
       <p className="mt-6 text-xl font-medium text-gray-400">

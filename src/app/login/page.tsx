@@ -20,14 +20,14 @@ export default function LoginPage() {
     <div className="flex min-h-screen w-full items-center justify-center bg-[#f7f7f5]">
       <div className="w-full max-w-sm rounded-xl border border-gray-200 bg-white p-8 shadow-lg">
         <div className="mb-8 text-center">
-          <h1 className="text-2xl font-bold text-[#37352f]">📦 LOGISTICS</h1>
-          <p className="mt-2 text-sm text-gray-500">진천냉장센터</p>
+          <h1 className="text-2xl font-bold text-[#37352f]">❄️ JINCHEON</h1>
+          <p className="mt-2 text-sm text-gray-500">Cold Storage Center</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="mb-1 block text-xs font-bold text-gray-600">
-              ID
+              EMAIL
             </label>
             {/* [수정] className 추가됨 */}
             <input
@@ -40,14 +40,14 @@ export default function LoginPage() {
           </div>
           <div>
             <label className="mb-1 block text-xs font-bold text-gray-600">
-              PW
+              PASSWORD
             </label>
             <input
               type="password"
               value={pw}
               onChange={(e) => setPw(e.target.value)}
               className="w-full rounded border border-gray-300 px-3 py-2 text-sm focus:border-[#2eaadc] focus:outline-none"
-              placeholder="password"
+              placeholder="1234"
             />
           </div>
 

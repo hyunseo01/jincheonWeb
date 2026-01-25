@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google';
 import './globals.css';
 import Sidebar from '@/components/layout/Sidebar'; // [중요] 사이드바 임포트
 import { AuthProvider } from '@/context/AuthContext';
+import { GlobalLoading } from '@/context/GlobalLoading';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -28,7 +29,7 @@ export default function RootLayout({
 
             {/* 4. 메인 콘텐츠 영역 */}
             <main className="relative flex h-full flex-1 flex-col overflow-hidden bg-[#f7f7f5]">
-              {children}
+              <GlobalLoading>{children}</GlobalLoading>
             </main>
           </div>
         </AuthProvider>

@@ -5,6 +5,7 @@ import { IssueDetailDTO } from '@/types/issue';
 import {
   bumpIssue,
   createComment,
+  deleteIssue,
   getIssueDetail,
   toggleIssueStatus,
 } from '@/lib/issue-api';
@@ -13,11 +14,13 @@ import { User } from '@/types/auth';
 
 import Badge from '@/components/ui/Badge';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/context/AuthContext';
 import {
   FaArrowUp,
   FaCheck,
   FaPaperPlane,
   FaTimes,
+  FaTrash,
   FaUndo,
   FaUserCircle,
 } from 'react-icons/fa';
@@ -25,20 +28,20 @@ import {
 interface IssueDetailModalProps {
   issueId: string | number;
   onClose: () => void;
-  // [추가] 부모 컴포넌트 데이터 갱신을 위한 콜백
   onUpdate?: () => void;
 }
 
 export default function IssueDetailModal({
   issueId,
   onClose,
-  onUpdate, // [추가]
+  onUpdate,
 }: IssueDetailModalProps) {
+  const { user } = useAuth();
+
   const [data, setData] = useState<IssueDetailDTO | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [newComment, setNewComment] = useState('');
 
-  // 멘션 관련 상태
   const [showMentionList, setShowMentionList] = useState(false);
   const [mentionQuery, setMentionQuery] = useState('');
   const [usersList, setUsersList] = useState<User[]>([]);
@@ -46,7 +49,6 @@ export default function IssueDetailModal({
 
   const timelineEndRef = useRef<HTMLDivElement>(null);
 
-  // 데이터 로드 함수
   const fetchData = async () => {
     try {
       if (!data) setIsLoading(true);
@@ -55,6 +57,7 @@ export default function IssueDetailModal({
         getIssueDetail(issueId),
         getAllUsers(),
       ]);
+
       setData(detailData);
       setUsersList(usersData);
     } catch (e) {
@@ -135,46 +138,64 @@ export default function IssueDetailModal({
       (u.teamName && u.teamName.includes(mentionQuery))
   );
 
-  // --- API 호출 핸들러 (리스트 갱신 로직 추가) ---
-
-  // 1. 끌올 (Bump)
   const handleBumpIssue = async () => {
     if (!data) return;
     try {
       await bumpIssue(issueId);
-      await fetchData(); // 모달 내부 데이터 갱신
-      if (onUpdate) onUpdate(); // [추가] 부모 리스트 갱신 (순서 변경 반영)
+      await fetchData();
+      if (onUpdate) onUpdate();
     } catch (e) {
       console.error(e);
       alert('끌올 실패');
     }
   };
 
-  // 2. 상태 변경 (완료/진행중)
   const handleToggleStatus = async () => {
     if (!data) return;
     try {
       await toggleIssueStatus(issueId);
-      await fetchData(); // 모달 내부 데이터 갱신
-      if (onUpdate) onUpdate(); // [추가] 부모 리스트 갱신 (완료 섹션 이동 등 반영)
+      await fetchData();
+      if (onUpdate) onUpdate();
     } catch (e) {
       console.error(e);
       alert('상태 변경 실패');
     }
   };
 
-  // 3. 댓글 작성
   const handleSubmitComment = async () => {
     if (!newComment.trim() || !data) return;
     try {
       await createComment(issueId, newComment);
       setNewComment('');
       setShowMentionList(false);
-      await fetchData(); // 모달 내부 데이터 갱신
-      if (onUpdate) onUpdate(); // [추가] 부모 리스트 갱신 (요청하신 사항 반영)
+      await fetchData();
+      if (onUpdate) onUpdate();
     } catch (e) {
       console.error(e);
       alert('댓글 등록 실패');
+    }
+  };
+
+  // 삭제 권한 계산
+  const canDelete = (() => {
+    if (!user || !data) return false;
+    const isAdminOrDev = user.role === 'admin' || user.role === 'developer';
+    const isOwner = !!data.authorId && data.authorId === user.id;
+    return isAdminOrDev || isOwner;
+  })();
+
+  const handleDeleteIssue = async () => {
+    if (!data) return;
+    const ok = confirm('이 이슈를 완전히 삭제할까요? (복구 불가)');
+    if (!ok) return;
+
+    try {
+      await deleteIssue(issueId);
+      if (onUpdate) onUpdate();
+      onClose();
+    } catch (e) {
+      console.error(e);
+      alert('삭제 실패');
     }
   };
 
@@ -245,6 +266,7 @@ export default function IssueDetailModal({
                 <FaArrowUp size={12} /> 끌올
               </button>
             )}
+
             <button
               onClick={handleToggleStatus}
               className={cn(
@@ -264,6 +286,18 @@ export default function IssueDetailModal({
                 </>
               )}
             </button>
+
+            {/* 삭제 버튼 */}
+            {canDelete && (
+              <button
+                onClick={handleDeleteIssue}
+                className="flex items-center gap-2 rounded-md bg-red-50 px-3 py-1.5 text-sm font-bold text-red-600 transition-colors hover:bg-red-100"
+                title="잘못 작성된 이슈를 완전히 삭제합니다"
+              >
+                <FaTrash size={12} /> 삭제
+              </button>
+            )}
+
             <button
               onClick={onClose}
               className="ml-2 rounded-full p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
@@ -370,15 +404,15 @@ export default function IssueDetailModal({
                   <div className="border-b border-gray-100 bg-gray-50 px-3 py-2 text-xs font-bold text-gray-500">
                     팀원 선택
                   </div>
-                  {filteredUsers.map((user) => (
+                  {filteredUsers.map((u) => (
                     <button
-                      key={user.id}
-                      onClick={() => handleSelectUser(user.name)}
+                      key={u.id}
+                      onClick={() => handleSelectUser(u.name)}
                       className="flex w-full items-center justify-between px-4 py-2 text-left text-sm hover:bg-blue-50 hover:text-blue-600"
                     >
-                      <span className="font-bold">{user.name}</span>
+                      <span className="font-bold">{u.name}</span>
                       <span className="text-xs text-gray-400">
-                        {user.teamName}
+                        {u.teamName}
                       </span>
                     </button>
                   ))}

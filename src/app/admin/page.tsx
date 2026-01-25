@@ -177,11 +177,16 @@ export default function AdminPage() {
     }
   };
 
+  // 접근 제어 (페이지 진입)
   if (!user || (user.role !== 'admin' && user.role !== 'developer')) {
     return (
       <div className="p-8 font-bold text-red-500">접근 권한이 없습니다.</div>
     );
   }
+
+  const meRole = user.role;
+  const isMeDeveloper = meRole === 'developer';
+  const isMeAdmin = meRole === 'admin';
 
   return (
     <div className="h-full overflow-y-auto p-8">
@@ -230,6 +235,7 @@ export default function AdminPage() {
               <FaPlus /> 사용자 등록
             </button>
           </div>
+
           <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
             <table className="w-full text-left text-sm">
               <thead className="border-b border-gray-200 bg-gray-50 font-bold text-gray-500">
@@ -242,110 +248,147 @@ export default function AdminPage() {
                   <th className="px-6 py-3 text-right">관리</th>
                 </tr>
               </thead>
+
               <tbody className="divide-y divide-gray-100">
-                {users.map((u) => (
-                  <tr key={u.id} className="hover:bg-gray-50">
-                    {/* 1. 프로필 (이름/이메일) */}
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-100 text-sm font-bold text-gray-600">
-                          {u.name.charAt(0)}
+                {users.map((u) => {
+                  const isTargetAdminOrDev =
+                    u.role === 'admin' || u.role === 'developer';
+
+                  // 규칙:
+                  // - developer: 모든 사용자 수정/삭제 가능
+                  // - admin: admin/developer 계정은 수정/삭제 불가
+                  const canManageTarget =
+                    isMeDeveloper || (isMeAdmin && !isTargetAdminOrDev);
+
+                  const isSelf = u.id === user.id;
+                  const canManageTargetFinal = canManageTarget && !isSelf;
+                  // const canManageTargetFinal = canManageTarget;
+
+                  const editBtnClass = cn(
+                    'rounded p-2 text-gray-400',
+                    canManageTargetFinal
+                      ? 'hover:bg-blue-50 hover:text-blue-500'
+                      : 'cursor-not-allowed opacity-40'
+                  );
+
+                  const deleteBtnClass = cn(
+                    'rounded p-2 text-gray-400',
+                    canManageTargetFinal
+                      ? 'hover:bg-red-50 hover:text-red-500'
+                      : 'cursor-not-allowed opacity-40'
+                  );
+
+                  return (
+                    <tr key={u.id} className="hover:bg-gray-50">
+                      {/* 1. 프로필 (이름/이메일) */}
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-100 text-sm font-bold text-gray-600">
+                            {u.name.charAt(0)}
+                          </div>
+                          <div>
+                            <div className="font-bold text-gray-800">
+                              {u.name}
+                            </div>
+                            <div className="flex items-center gap-1 text-xs text-gray-400">
+                              <FaEnvelope size={10} /> {u.email}
+                            </div>
+                          </div>
                         </div>
-                        <div>
-                          <div className="font-bold text-gray-800">
-                            {u.name}
-                          </div>
-                          <div className="flex items-center gap-1 text-xs text-gray-400">
-                            <FaEnvelope size={10} /> {u.email}
-                          </div>
+                      </td>
+
+                      {/* 2. 소속 (그룹 > 팀) */}
+                      <td className="px-6 py-4">
+                        <div className="flex flex-col">
+                          <span className="font-bold text-gray-700">
+                            {u.groupName || '-'}
+                          </span>
+                          <span className="text-xs text-gray-400">
+                            {u.teamName ? `> ${u.teamName}` : '소속 팀 없음'}
+                          </span>
                         </div>
-                      </div>
-                    </td>
+                      </td>
 
-                    {/* 2. 소속 (그룹 > 팀) */}
-                    <td className="px-6 py-4">
-                      <div className="flex flex-col">
-                        <span className="font-bold text-gray-700">
-                          {u.groupName || '-'}
-                        </span>
-                        <span className="text-xs text-gray-400">
-                          {u.teamName ? `> ${u.teamName}` : '소속 팀 없음'}
-                        </span>
-                      </div>
-                    </td>
+                      {/* 3. 연락처 (모바일/내선) */}
+                      <td className="px-6 py-4">
+                        <div className="flex flex-col gap-1 text-xs text-gray-600">
+                          {u.mobilePhone ? (
+                            <div className="flex items-center gap-2">
+                              <FaMobileAlt className="text-gray-400" />
+                              {u.mobilePhone}
+                            </div>
+                          ) : (
+                            <span className="text-gray-300">-</span>
+                          )}
 
-                    {/* 3. 연락처 (모바일/내선) */}
-                    <td className="px-6 py-4">
-                      <div className="flex flex-col gap-1 text-xs text-gray-600">
-                        {u.mobilePhone ? (
-                          <div className="flex items-center gap-2">
-                            <FaMobileAlt className="text-gray-400" />
-                            {u.mobilePhone}
-                          </div>
-                        ) : (
-                          <span className="text-gray-300">-</span>
-                        )}
-                        {u.officePhone && (
-                          <div className="flex items-center gap-2 text-gray-400">
-                            <FaPhone size={10} />
-                            {u.officePhone}
-                          </div>
-                        )}
-                      </div>
-                    </td>
+                          {u.officePhone ? (
+                            <div className="flex items-center gap-2 text-gray-400">
+                              <FaPhone size={10} />
+                              {u.officePhone}
+                            </div>
+                          ) : null}
+                        </div>
+                      </td>
 
-                    {/* 4. 권한 */}
-                    <td className="px-6 py-4 text-center">
-                      <span
-                        className={cn(
-                          'inline-block min-w-[80px] rounded px-2 py-1 text-xs font-bold uppercase shadow-sm',
-                          u.role === 'admin' || u.role === 'developer'
-                            ? 'border border-red-100 bg-red-50 text-red-600'
-                            : u.role === 'manager'
-                              ? 'border border-blue-100 bg-blue-50 text-blue-600'
-                              : 'border border-gray-200 bg-gray-50 text-gray-500'
-                        )}
-                      >
-                        {u.role}
-                      </span>
-                    </td>
-
-                    {/* 5. 가입일 */}
-                    <td className="px-6 py-4 text-center text-xs text-gray-500">
-                      {/* JSON에는 createdAt이 있을 수도 없을 수도 있음 (DTO 타입에 따라 다름) */}
-                      {/* 만약 User 타입에 createdAt이 없다면 any로 우회하거나 타입을 추가해야 함 */}
-                      <div className="flex items-center justify-center gap-1">
-                        <FaCalendarAlt className="text-gray-300" />
-                        {formatDate((u as any).createdAt)}
-                      </div>
-                    </td>
-
-                    {/* 6. 관리 버튼 */}
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex justify-end gap-2">
-                        <button
-                          onClick={() => {
-                            setEditUserTarget(u);
-                            setIsUserModalOpen(true);
-                          }}
-                          className="rounded p-2 text-gray-400 hover:bg-blue-50 hover:text-blue-500"
-                          title="수정"
+                      {/* 4. 권한 */}
+                      <td className="px-6 py-4 text-center">
+                        <span
+                          className={cn(
+                            'inline-block min-w-[80px] rounded px-2 py-1 text-xs font-bold uppercase shadow-sm',
+                            u.role === 'admin' || u.role === 'developer'
+                              ? 'border border-red-100 bg-red-50 text-red-600'
+                              : u.role === 'manager'
+                                ? 'border border-blue-100 bg-blue-50 text-blue-600'
+                                : 'border border-gray-200 bg-gray-50 text-gray-500'
+                          )}
                         >
-                          <FaEdit />
-                        </button>
-                        <button
-                          onClick={() => handleUserDelete(u.id)}
-                          className="rounded p-2 text-gray-400 hover:bg-red-50 hover:text-red-500"
-                          title="삭제"
-                        >
-                          <FaTrash />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                          {u.role}
+                        </span>
+                      </td>
+
+                      {/* 5. 가입일 */}
+                      <td className="px-6 py-4 text-center text-xs text-gray-500">
+                        <div className="flex items-center justify-center gap-1">
+                          <FaCalendarAlt className="text-gray-300" />
+                          {formatDate((u as any).createdAt)}
+                        </div>
+                      </td>
+
+                      {/* 6. 관리 버튼 */}
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex justify-end gap-2">
+                          <button
+                            onClick={() => {
+                              if (!canManageTargetFinal) return;
+                              setEditUserTarget(u);
+                              setIsUserModalOpen(true);
+                            }}
+                            disabled={!canManageTargetFinal}
+                            className={editBtnClass}
+                            title={canManageTargetFinal ? '수정' : '권한 없음'}
+                          >
+                            <FaEdit />
+                          </button>
+
+                          <button
+                            onClick={() => {
+                              if (!canManageTargetFinal) return;
+                              handleUserDelete(u.id);
+                            }}
+                            disabled={!canManageTargetFinal}
+                            className={deleteBtnClass}
+                            title={canManageTargetFinal ? '삭제' : '권한 없음'}
+                          >
+                            <FaTrash />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
+
             {users.length === 0 && (
               <div className="p-8 text-center text-gray-400">
                 사용자가 없거나 로딩 중입니다.
@@ -366,6 +409,7 @@ export default function AdminPage() {
               <FaPlus /> 팀 추가
             </button>
           </div>
+
           {teams.length === 0 ? (
             <div className="p-8 text-center text-gray-400">정보 없음</div>
           ) : (
@@ -415,6 +459,7 @@ export default function AdminPage() {
               <FaPlus /> 그룹 추가
             </button>
           </div>
+
           {groups.length === 0 ? (
             <div className="p-8 text-center text-gray-400">정보 없음</div>
           ) : (
