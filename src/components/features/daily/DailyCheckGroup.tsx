@@ -3,9 +3,21 @@
 import { useEffect, useMemo, useState } from 'react';
 import { DailyGroup, DailyGroupConfig, DailyRow } from '@/types/daily';
 import { cn } from '@/lib/utils';
-import { FaCheck, FaCog, FaLock, FaPlus, FaTimes, FaTrash, } from 'react-icons/fa';
+import {
+  FaCheck,
+  FaCog,
+  FaLock,
+  FaPlus,
+  FaTimes,
+  FaTrash,
+} from 'react-icons/fa';
 import DailyGroupConfigurator from './DailyGroupConfigurator';
-import { createDailyRow, deleteDailyRow, updateDailyGroup, updateDailyRow, } from '@/lib/daily-api';
+import {
+  createDailyRow,
+  deleteDailyRow,
+  updateDailyGroup,
+  updateDailyRow,
+} from '@/lib/daily-api';
 
 interface Props {
   group: DailyGroup;
